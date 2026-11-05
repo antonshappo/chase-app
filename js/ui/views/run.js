@@ -44,7 +44,7 @@ function cardBody(app, card) {
         ? 'Выполни подряд, «Да!» и награда за каждую команду. Темп бодрый.'
         : 'Цепочка: команды подряд без награды между ними, в конце — джекпот (много вкусняшек или игра).';
       const items = card.slugs.map(T).filter(Boolean);
-      return `<h2>${BLOCK[card.block].title}</h2><p>${lead}</p><ol class="chain">${items.map((t) => `<li><b>${esc(t.meta.name)}</b>${t.meta.commands.length ? ` <span class="muted">«${t.meta.commands.map(esc).join(' / ')}»</span>` : ''}</li>`).join('')}</ol>`;
+      return `<h2>${BLOCK[card.block].title}</h2><p>${lead}</p><ol class="chain">${items.map((t) => `<li><b>${esc(t.meta.name)}</b>${t.meta.commands.length && t.meta.commands.join(' / ') !== t.meta.name ? ` <span class="muted">«${t.meta.commands.map(esc).join(' / ')}»</span>` : ''}</li>`).join('')}</ol>`;
     }
     case 'new': {
       const t = T(card.slugs[0]);

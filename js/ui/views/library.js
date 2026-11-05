@@ -23,7 +23,7 @@ export function view(app) {
       ? ` · ${stepWord(t)} ${t.meta.step}${t.steps.length ? `/${t.steps.length}` : ''}` : '';
     return `<li><a href="#/trick/${encodeURIComponent(t.slug)}">
       <span class="lib-name">${esc(t.meta.name)}${t.error ? ' ⚠️' : ''}${t.meta.needs_method ? ' <span class="muted small">· нужна методика</span>' : ''}</span>
-      <span class="lib-meta">${statusBadge(t.meta.status)} <span class="muted small">${TYPE[t.meta.type] || ''} · ${PLACE[t.meta.place] || ''}${step}</span></span>
+      <span class="lib-meta">${t.meta.type === 'game' ? '' : `${statusBadge(t.meta.status)} `}<span class="muted small">${TYPE[t.meta.type] || ''} · ${PLACE[t.meta.place] || ''}${step}</span></span>
     </a></li>`;
   };
   return `<section class="card">
