@@ -1,0 +1,65 @@
+import { esc } from '../core/md.js';
+import { STATUS } from '../core/labels.js';
+import { trickPath } from '../core/trick.js';
+import { dayKey, localIso } from '../core/log.js';
+
+function storageGet(kind, key, fallback) {
+  try {
+    const raw = globalThis[kind].getItem(key);
+    return raw == null ? fallback : JSON.parse(raw) ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function storageSet(kind, key, value) {
+  try {
+    if (value == null) globalThis[kind].removeItem(key);
+    else globalThis[kind].setItem(key, JSON.stringify(value));
+  } catch {
+    /* приватный режим или хранилище недоступно */
+  }
+}
+
+export const lsGet = (k, d) => storageGet('localStorage', k, d);
+export const lsSet = (k, v) => storageSet('localStorage', k, v);
+export const ssGet = (k, d) => storageGet('sessionStorage', k, d);
+export const ssSet = (k, v) => storageSet('sessionStorage', k, v);
+
+export const today = () => dayKey(localIso());
+
+export const trickName = (app, slug) => app.model.bySlug.get(slug)?.meta.name || slug;
+
+export function options(map, current) {
+  return Object.entries(map)
+    .map(([v, l]) => `<option value="${esc(v)}"${v === current ? ' selected' : ''}>${esc(l)}</option>`)
+    .join('');
+}
+
+export const statusBadge = (s) => `<span class="badge st-${esc(s)}">${STATUS[s] || esc(s)}</span>`;
+
+export const setMeta = (app, slug, patch) => app.dispatch({ type: 'meta', path: trickPath(slug), patch });
+
+export function confirmLearning(app, slug, label) {
+  const others = app.model.tricks.filter((x) => x.meta.status === 'learning' && x.slug !== slug);
+  const limit = app.model.settings.learningLimit || 2;
+  if (others.length < limit) return true;
+  const name = label || trickName(app, slug);
+  const list = others.map((x) => `«${x.meta.name}»`).join(', ');
+  return globalThis.confirm(`Сейчас уже учите ${others.length}: ${list}. Лучше не больше ${limit} одновременно. Всё равно добавить «${name}»?`);
+}
+
+export function visibleSuggestions(list) {
+  const dismissed = new Set(lsGet('chase.dismissed', []));
+  return list.filter((s) => !dismissed.has(s.key));
+}
+
+export function suggestionsBlock(list) {
+  if (!list.length) return '';
+  return `<section class="suggest"><h3>Подсказки</h3>${list.map((s) => `<div class="suggest-item">
+    <p>${esc(s.text)}</p>
+    <div class="row">
+      <button class="btn small primary" data-act="sugApply" data-slug="${esc(s.slug)}" data-patch="${esc(JSON.stringify(s.patch))}">Да</button>
+      <button class="btn small ghost" data-act="sugDismiss" data-key="${esc(s.key)}">Не сейчас</button>
+    </div></div>`).join('')}</section>`;
+}
