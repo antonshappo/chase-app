@@ -38,7 +38,7 @@ function repeatCard(t, place) {
   return card;
 }
 
-const newCard = (t) => ({ block: 'new', slugs: [t.slug], step: t.meta.step });
+export const newCard = (t) => ({ block: 'new', slugs: [t.slug], step: t.meta.step });
 
 export function buildSession({ tricks, sessions = [], place, minutes = 20, props = [], rng = Math.random }) {
   const cfg = PLAN[minutes] || PLAN[20];

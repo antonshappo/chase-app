@@ -102,9 +102,9 @@ h4 { margin: 12px 0 4px; }
 .seg button.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
 
 .plan-list { list-style: none; padding: 0; margin: 0 0 8px; }
-.plan-list li { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line); }
-.plan-list li > div { flex: 1; display: grid; min-width: 0; }
-.plan-list li span { color: var(--muted); font-size: .9rem; overflow-wrap: anywhere; }
+.plan-list > li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.plan-list > li > div:not(.picker) { flex: 1; display: grid; min-width: 0; }
+.plan-list > li > div:not(.picker) span { color: var(--muted); font-size: .9rem; overflow-wrap: anywhere; }
 .chip { border: 1px solid var(--accent); color: var(--accent); background: none; border-radius: 999px; padding: 4px 10px; margin: 2px; font: inherit; font-size: .85rem; cursor: pointer; }
 
 .run h2 { font-size: 1.4rem; }
@@ -202,3 +202,15 @@ select.active, input.active, .multi.active > summary { border-color: var(--accen
 .row-tools .icon-btn:disabled { opacity: .3; cursor: default; }
 .edit-actions { position: sticky; bottom: calc(64px + env(safe-area-inset-bottom)); padding: 8px 0; background: linear-gradient(transparent, var(--bg) 30%); }
 @media (min-width: 900px) { .edit-actions { bottom: 0; } }
+
+.picker { flex: 0 0 100%; min-width: 0; background: var(--bg); border-radius: 12px; padding: 10px 12px; display: grid; gap: 6px; }
+.picker-title { margin: 4px 0 0; font-size: .8rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.pick-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.pick-opt {
+  width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; text-align: left;
+  border: 1px solid var(--line); background: var(--surface); color: var(--text); border-radius: 10px;
+  padding: 10px 12px; font: inherit; cursor: pointer; min-height: 44px;
+}
+.pick-opt small { color: var(--muted); white-space: nowrap; }
+.pick-opt.on { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }

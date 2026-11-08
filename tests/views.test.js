@@ -98,3 +98,16 @@ test('edit screen renders all fields of a trick', async () => {
   assert.ok(html.includes('Пятка &lt;b&gt;'));
   assert.ok(edit.view(a, ['nope']).includes('Не найдено'));
 });
+
+test('«Новое» row offers a manual choice: learning tricks for the place and «Хочу выучить»', () => {
+  const a = app();
+  a.ui.plan = { place: 'home', minutes: 20, cards: [{ block: 'warmup', slugs: ['sidet'] }, { block: 'new', slugs: ['pyatka'], step: 1 }] };
+  let html = train.view(a);
+  assert.ok(html.includes('data-act="trainNewToggle"'));
+  assert.ok(!html.includes('data-act="trainNewSet"'), 'closed by default');
+  a.ui.newOpen = true;
+  html = train.view(a);
+  assert.match(html, /data-act="trainNewSet" data-i="1" data-slug="pyatka"/);
+  assert.match(html, /data-act="trainPick" data-i="1" data-slug="obnimi"/);
+  assert.ok(!html.includes('data-slug="zamri" data-act'), 'reinforcing is not offered');
+});

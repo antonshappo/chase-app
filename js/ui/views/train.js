@@ -1,4 +1,4 @@
-import { buildSession, swapCard } from '../../core/generator.js';
+import { buildSession, swapCard, eligible, newCard } from '../../core/generator.js';
 import { allSuggestions } from '../../core/rules.js';
 import { BLOCK, PLACE } from '../../core/labels.js';
 import { esc } from '../../core/md.js';
@@ -7,19 +7,45 @@ import { startRun } from './run.js';
 
 const setup = () => lsGet('chase.setup', { place: 'home', minutes: 20 });
 
+const where = (plan) => (plan.place === 'outdoor' ? 'на улице' : 'дома');
+const isNew = (c) => c.block === 'new' || c.block === 'pick';
+// Список выбора для «Нового» открыт сам, если учить пока нечего; иначе — по кнопке «Выбрать».
+const pickerOpen = (app, c) => app.ui.newOpen ?? c.block === 'pick';
+
 function cardLine(app, c, plan) {
-  if (c.block === 'pick') {
-    return `${plan.place === 'outdoor' ? 'На улице' : 'Дома'} сейчас ничего не учим — выбери: ${c.options.slice(0, 6).map((s) => `<button class="chip" data-act="trainPick" data-slug="${esc(s)}">${esc(trickName(app, s))}</button>`).join(' ')}`;
-  }
+  if (c.block === 'pick') return `${where(plan) === 'дома' ? 'Дома' : 'На улице'} сейчас ничего не учим — выбери ниже`;
   return c.slugs.map((s) => esc(trickName(app, s))).join(' → ');
+}
+
+function newPicker(app, plan, i) {
+  const pool = app.model.tricks.filter((t) => t.meta.type !== 'game' && eligible(t, plan.place, app.model.settings.props));
+  const learning = pool.filter((t) => t.meta.status === 'learning');
+  const want = pool.filter((t) => t.meta.status === 'want');
+  const cur = plan.cards[i].slugs[0];
+  const step = (t) => `шаг ${t.meta.step}${t.steps.length ? `/${t.steps.length}` : ''}`;
+  return `<div class="picker">
+    <p class="picker-title">Сейчас учим ${where(plan)}</p>
+    ${learning.length ? `<ul class="pick-list">${learning.map((t) => `<li><button class="pick-opt${t.slug === cur ? ' on' : ''}" data-act="trainNewSet" data-i="${i}" data-slug="${esc(t.slug)}"${t.slug === cur ? ' aria-current="true"' : ''}><span>${t.slug === cur ? '● ' : ''}${esc(t.meta.name)}</span><small>${step(t)}</small></button></li>`).join('')}</ul>` : '<p class="muted small">Пока ничего.</p>'}
+    ${want.length ? `<p class="picker-title">Начать учить новое</p><div class="chips">${want.map((t) => `<button class="chip" data-act="trainPick" data-i="${i}" data-slug="${esc(t.slug)}">${esc(t.meta.name)}</button>`).join(' ')}</div>` : ''}
+  </div>`;
+}
+
+function rowButton(app, c, i) {
+  if (!isNew(c)) return `<button class="icon-btn" data-act="trainSwap" data-i="${i}" aria-label="Заменить случайно">🔄</button>`;
+  const open = pickerOpen(app, c);
+  return `<button class="btn small" data-act="trainNewToggle" data-i="${i}" aria-expanded="${open}">Выбрать ${open ? '▴' : '▾'}</button>`;
 }
 
 function planView(app, plan) {
   return `<section class="card plan">
     <h2>План: ${PLACE[plan.place]}${plan.minutes ? ` · ${plan.minutes} мин` : ''}</h2>
-    <ol class="plan-list">${plan.cards.map((c, i) => `<li><div><b>${BLOCK[c.block].title}</b><span>${cardLine(app, c, plan)}</span></div>${c.block === 'pick' ? '' : `<button class="icon-btn" data-act="trainSwap" data-i="${i}" aria-label="Заменить">🔄</button>`}</li>`).join('')}</ol>
+    <ol class="plan-list">${plan.cards.map((c, i) => `<li><div><b>${BLOCK[c.block].title}</b><span>${cardLine(app, c, plan)}</span></div>${rowButton(app, c, i)}${isNew(c) && pickerOpen(app, c) ? newPicker(app, plan, i) : ''}</li>`).join('')}</ol>
     <button class="btn primary big" data-act="trainStart">Начать ▶</button>
   </section>`;
+}
+
+function setCard(app, i, card) {
+  app.ui.plan = { ...app.ui.plan, cards: app.ui.plan.cards.map((c, j) => (j === i ? card : c)) };
 }
 
 export function view(app) {
@@ -44,6 +70,7 @@ function build(app) {
   app.ui.plan = buildSession({
     tricks: app.model.tricks, sessions: app.model.sessions, place: s.place, minutes: s.minutes, props: app.model.settings.props,
   });
+  app.ui.newOpen = undefined;
   app.render(true);
 }
 
@@ -72,11 +99,31 @@ export const actions = {
     }
     app.render(true);
   },
-  async trainPick(app, el) {
+  trainNewToggle(app, el) {
+    const c = app.ui.plan.cards[Number(el.dataset.i)];
+    app.ui.newOpen = !pickerOpen(app, c);
+    app.render(true);
+  },
+  trainNewSet(app, el) {
     const t = app.model.bySlug.get(el.dataset.slug);
-    const where = app.ui.plan?.place === 'outdoor' ? 'на улице' : 'дома';
-    if (!t || !globalThis.confirm(`Начать учить «${t.meta.name}» ${where}? Он будет в блоке «Новое» каждой тренировки, пока не выучите.`)) return;
-    await startLearning(app, el.dataset.slug, () => build(app));
+    if (!t) return;
+    setCard(app, Number(el.dataset.i), newCard(t));
+    app.ui.newOpen = false;
+    app.render(true);
+    info(app, `Новое: «${t.meta.name}»`);
+  },
+  async trainPick(app, el) {
+    const slug = el.dataset.slug;
+    const i = Number(el.dataset.i);
+    const t = app.model.bySlug.get(slug);
+    if (!t || !globalThis.confirm(`Начать учить «${t.meta.name}» ${where(app.ui.plan)}? Он будет в блоке «Новое» каждой тренировки, пока не выучите.`)) return;
+    const prevCard = app.ui.plan.cards[i];
+    await startLearning(app, slug, () => {
+      const now = app.model.bySlug.get(slug);
+      if (app.ui.plan) setCard(app, i, now?.meta.status === 'learning' ? newCard(now) : prevCard);
+      app.ui.newOpen = false;
+      app.render(true);
+    });
   },
   trainStart(app) {
     if (app.ui.plan?.cards.length) startRun(app, app.ui.plan);
