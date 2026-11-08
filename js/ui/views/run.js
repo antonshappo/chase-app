@@ -1,4 +1,4 @@
-import { BLOCK, LEVEL, RESULT, RESULT_LABEL, stepWord } from '../../core/labels.js';
+import { BLOCK, LEVEL, RESULT, RESULT_LABEL } from '../../core/labels.js';
 import { esc, md, safeUrl } from '../../core/md.js';
 import { localIso, logPath } from '../../core/log.js';
 import { allSuggestions } from '../../core/rules.js';
@@ -51,7 +51,7 @@ function cardBody(app, card, plan) {
       if (!t) return missing();
       const step = t.steps[card.step - 1];
       return `<h2>${esc(t.meta.name)}</h2>${cmd(t)}
-        <p class="step-label">${stepWord(t)} ${card.step}${t.steps.length ? ` из ${t.steps.length}` : ''}${step ? `: <b>${esc(step.title)}</b>` : ''}</p>
+        <p class="step-label">Шаг ${card.step}${t.steps.length ? ` из ${t.steps.length}` : ''}${step ? `: <b>${esc(step.title)}</b>` : ''}</p>
         ${step ? `<div class="md">${md(step.body)}</div>` : '<p class="muted">Методики пока нет — посмотри ссылки. Claude допишет шаги.</p>'}
         <p class="muted small">5–7 минут, заканчивай на удачном повторе.</p>${hintBlock(t)}${linksBlock(t)}`;
     }

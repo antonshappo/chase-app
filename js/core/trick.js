@@ -2,6 +2,7 @@ import { load, dump, JSON_SCHEMA } from '../vendor/js-yaml.mjs';
 
 export const STATUSES = ['want', 'learning', 'reinforcing', 'known'];
 export const RELIABILITY = ['home', 'yard', 'park', 'dogs'];
+export const TYPES = ['trick', 'game'];
 
 export const DEFAULT_META = {
   name: '',
@@ -99,10 +100,15 @@ export function linkTitle(url) {
   return host;
 }
 
-export function withLink(text, { url, title, note }) {
-  const clean = (s) => String(s || '').replace(/[[\]\n]/g, ' ').trim();
+const clean = (s) => String(s || '').replace(/[[\]\n]/g, ' ').trim();
+
+export function linkLine({ url, title, note }) {
   const href = String(url).trim();
-  const line = `- [${clean(title) || linkTitle(href)}](${href})${clean(note) ? ` — ${clean(note)}` : ''}`;
+  return `- [${clean(title) || linkTitle(href)}](${href})${clean(note) ? ` — ${clean(note)}` : ''}`;
+}
+
+export function withLink(text, link) {
+  const line = linkLine(link);
   const current = getSection(text, 'Ссылки');
   const base = current ? current.replace(/\s*$/, '') : '';
   return setSection(text, 'Ссылки', `${base}\n${line}\n\n`, 'Заметки');
@@ -110,6 +116,24 @@ export function withLink(text, { url, title, note }) {
 
 export function withNotes(text, notes) {
   return setSection(text, 'Заметки', `\n${String(notes).trim()}\n\n`);
+}
+
+// Заголовки ## и ### внутри текста сломали бы разбор файла — убираем решётки в начале строк.
+const plain = (s) => String(s || '').replace(/^#{2,}\s*/gm, '').trim();
+const oneLine = (s) => String(s || '').replace(/\s+/g, ' ').replace(/^#+\s*/, '').trim();
+
+// Собирает файл трюка целиком из полей формы «Редактировать».
+export function buildTrickText(meta, { description = '', steps = [], extra = [], links = [], notes = '' } = {}) {
+  let body = '\n';
+  if (plain(description)) body += `## Описание\n${plain(description)}\n\n`;
+  if (steps.length) {
+    body += `## Шаги\n\n${steps.map((s, i) => `### ${i + 1}. ${oneLine(s.title) || `Шаг ${i + 1}`}\n${plain(s.body)}\n`).join('\n')}\n`;
+  }
+  for (const x of extra) body += `## ${oneLine(x.title) || 'Раздел'}\n${plain(x.md)}\n\n`;
+  body += `## Ссылки\n${links.map((l) => `${linkLine(l)}\n`).join('')}\n## Заметки\n${plain(notes) ? `${plain(notes)}\n` : ''}`;
+  const out = {};
+  for (const [k, v] of Object.entries(meta)) if (v !== undefined && v !== null) out[k] = v;
+  return joinFrontmatter(out, body);
 }
 
 export function newTrickText(meta) {
@@ -154,6 +178,7 @@ function normalizeMeta(raw, slug) {
   m.props = toList(m.props);
   m.step = Number.isInteger(m.step) && m.step > 0 ? m.step : 1;
   if (!STATUSES.includes(m.status)) m.status = 'want';
+  if (!TYPES.includes(m.type)) m.type = 'trick'; // старый тип «project» и опечатки — это трюк
   if (m.known_since != null) m.known_since = String(m.known_since);
   return m;
 }

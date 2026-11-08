@@ -84,6 +84,17 @@ test('library filter: several props match any of them, treats are implicit', () 
 test('library shows a reset button only when filters are active', () => {
   const a = app();
   assert.ok(!library.view(a).includes('libReset'));
-  a.ui.lib = { q: '', place: '', status: '', type: 'project', props: [] };
+  a.ui.lib = { q: '', place: '', status: '', type: 'game', props: [] };
   assert.ok(library.view(a).includes('libReset'));
+});
+
+test('edit screen renders all fields of a trick', async () => {
+  const edit = await import('../js/ui/views/edit.js');
+  const a = app();
+  const html = edit.view(a, ['pyatka']);
+  for (const name of ['name="name"', 'name="commands"', 'name="type"', 'name="place"', 'name="description"', 'name="steps-0-title"', 'name="notes"', 'data-kind="links"', 'data-kind="extra"']) {
+    assert.ok(html.includes(name), name);
+  }
+  assert.ok(html.includes('Пятка &lt;b&gt;'));
+  assert.ok(edit.view(a, ['nope']).includes('Не найдено'));
 });

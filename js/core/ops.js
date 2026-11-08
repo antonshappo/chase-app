@@ -1,4 +1,4 @@
-import { withMeta, withLink, withNotes } from './trick.js';
+import { withMeta, withLink, withNotes, splitFrontmatter, buildTrickText } from './trick.js';
 
 function need(text, op) {
   if (text == null) throw new Error(`Нет файла ${op.path}`);
@@ -20,6 +20,10 @@ export function applyOp(text, op) {
       if (!list.some((s) => s.id === op.session.id)) list.push(op.session);
       list.sort((a, b) => a.id.localeCompare(b.id));
       return `${JSON.stringify(list, null, 2)}\n`;
+    }
+    case 'edit': {
+      const { meta } = splitFrontmatter(need(text, op));
+      return buildTrickText({ ...meta, ...op.meta }, op.content);
     }
     case 'delete':
       return null;

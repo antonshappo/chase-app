@@ -1,5 +1,5 @@
 import { progressStats } from '../../core/stats.js';
-import { STATUS, stepWord } from '../../core/labels.js';
+import { STATUS } from '../../core/labels.js';
 import { esc } from '../../core/md.js';
 
 const MONTHS = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
@@ -24,7 +24,7 @@ export function view(app) {
     <div class="tile"><b>${s.counts.known}</b><small>знает всего</small></div>
   </section>
   <section class="card"><h2>${MONTHS[mo - 1]} ${y}</h2><div class="cal">${DOW.map((d) => `<span class="dow">${d}</span>`).join('')}${cells.join('')}</div></section>
-  <section class="card"><h2>Сейчас учим</h2>${s.learning.length ? `<ul class="lib">${s.learning.map((t) => `<li><a href="#/trick/${encodeURIComponent(t.slug)}"><span class="lib-name">${esc(t.meta.name)}</span><span class="muted small">${stepWord(t)} ${t.meta.step}${t.steps.length ? `/${t.steps.length}` : ''}</span></a></li>`).join('')}</ul>` : '<p class="muted">Ничего — выбери в библиотеке.</p>'}</section>
+  <section class="card"><h2>Сейчас учим</h2>${s.learning.length ? `<ul class="lib">${s.learning.map((t) => `<li><a href="#/trick/${encodeURIComponent(t.slug)}"><span class="lib-name">${esc(t.meta.name)}</span><span class="muted small">Шаг ${t.meta.step}${t.steps.length ? `/${t.steps.length}` : ''}</span></a></li>`).join('')}</ul>` : '<p class="muted">Ничего — выбери в библиотеке.</p>'}</section>
   ${s.learnedThisMonth.length ? `<section class="card"><h2>Выучено в ${MONTHS[mo - 1].replace(/ь$/, 'е').replace(/й$/, 'е')}</h2><p>${s.learnedThisMonth.map((t) => esc(t.meta.name)).join(', ')}</p></section>` : ''}
   <section class="card"><h2>По статусам</h2><ul class="counts">${Object.entries(STATUS).map(([k, l]) => `<li><span>${l}</span><b>${s.counts[k]}</b></li>`).join('')}</ul></section>`;
 }

@@ -2,7 +2,7 @@ import { buildSession, swapCard } from '../../core/generator.js';
 import { allSuggestions } from '../../core/rules.js';
 import { BLOCK, PLACE } from '../../core/labels.js';
 import { esc } from '../../core/md.js';
-import { trickName, lsGet, lsSet, suggestionsBlock, visibleSuggestions, setMeta, confirmLearning } from '../helpers.js';
+import { trickName, lsGet, lsSet, suggestionsBlock, visibleSuggestions, startLearning, info } from '../helpers.js';
 import { startRun } from './run.js';
 
 const setup = () => lsGet('chase.setup', { place: 'home', minutes: 20 });
@@ -60,13 +60,23 @@ export const actions = {
   },
   trainBuild: build,
   trainSwap(app, el) {
-    app.ui.plan = swapCard(app.ui.plan, Number(el.dataset.i), { tricks: app.model.tricks, props: app.model.settings.props });
+    const before = app.ui.plan;
+    const card = before.cards[Number(el.dataset.i)];
+    app.ui.plan = swapCard(before, Number(el.dataset.i), { tricks: app.model.tricks, props: app.model.settings.props });
+    if (app.ui.plan === before) {
+      const where = before.place === 'outdoor' ? 'для улицы' : 'для дома';
+      info(app, card.block === 'new'
+        ? `Другого в «Учим» ${where} нет. Новое можно выбрать в библиотеке.`
+        : `Заменить не на что: других подходящих занятий ${where} нет.`);
+      return;
+    }
     app.render(true);
   },
   async trainPick(app, el) {
-    if (!confirmLearning(app, el.dataset.slug)) return;
-    await setMeta(app, el.dataset.slug, { status: 'learning', step: 1 });
-    build(app);
+    const t = app.model.bySlug.get(el.dataset.slug);
+    const where = app.ui.plan?.place === 'outdoor' ? 'на улице' : 'дома';
+    if (!t || !globalThis.confirm(`Начать учить «${t.meta.name}» ${where}? Он будет в блоке «Новое» каждой тренировки, пока не выучите.`)) return;
+    await startLearning(app, el.dataset.slug, () => build(app));
   },
   trainStart(app) {
     if (app.ui.plan?.cards.length) startRun(app, app.ui.plan);

@@ -1,4 +1,4 @@
-import { STATUS, TYPE, TYPE_HINT, PLACE, PROPS, LEVEL, RESULT, BLOCK, stepWord } from '../../core/labels.js';
+import { STATUS, TYPE, TYPE_HINT, PLACE, PROPS, LEVEL, RESULT, BLOCK } from '../../core/labels.js';
 import { esc, md, safeUrl } from '../../core/md.js';
 import { entriesFor } from '../../core/log.js';
 import { suggestionsFor } from '../../core/rules.js';
@@ -6,7 +6,7 @@ import { trickPath } from '../../core/trick.js';
 import { singleSession } from '../../core/generator.js';
 import { startRun } from './run.js';
 import {
-  options, setMeta, suggestionsBlock, visibleSuggestions, confirmLearning, lsGet, lsSet, today, saved,
+  options, setMeta, suggestionsBlock, visibleSuggestions, confirmLearning, lsGet, lsSet, today, saved, startLearning,
 } from '../helpers.js';
 
 const fmtDate = (iso) => iso.slice(0, 10).split('-').reverse().join('.');
@@ -15,7 +15,7 @@ export function view(app, [slug]) {
   const t = app.model.bySlug.get(slug);
   if (!t) return '<section class="card"><p>Не найдено.</p><a href="#/library">← Библиотека</a></section>';
   const m = t.meta;
-  const word = stepWord(t);
+  const word = 'Шаг';
   const s = esc(slug);
   const hist = entriesFor(slug, app.model.sessions).slice(-10).reverse();
   const sug = visibleSuggestions(suggestionsFor(t, app.model.sessions));
@@ -37,7 +37,7 @@ export function view(app, [slug]) {
     : `<button class="btn primary" data-act="trickRun" data-slug="${s}">▶ Заниматься сейчас</button>`;
 
   const steps = t.steps.length
-    ? `<section class="card"><h2>${m.type === 'project' ? 'Уровни' : 'Шаги'}</h2><ol class="steps">${t.steps.map((st, i) => {
+    ? `<section class="card"><h2>Шаги</h2><ol class="steps">${t.steps.map((st, i) => {
       const cur = m.type !== 'game' && i + 1 === m.step;
       return `<li class="${cur && m.status === 'learning' ? 'current' : ''}"><details${cur ? ' open' : ''}><summary>${esc(st.title)}</summary><div class="md">${md(st.body)}</div></details></li>`;
     }).join('')}</ol></section>`
@@ -53,11 +53,6 @@ export function view(app, [slug]) {
 
   const history = `<section class="card"><h2>История</h2>${hist.length ? `<ul class="hist">${hist.map((h) => `<li><span>${fmtDate(h.date)}</span><span>${BLOCK[h.block]?.title || esc(h.block)}${h.step ? ` · ${word.toLowerCase()} ${h.step}` : ''}${h.level ? ` · ${LEVEL[h.level]}` : ''}</span><span>${RESULT[h.result] || '—'}</span></li>`).join('')}</ul>` : '<p class="muted">Ещё не занимались.</p>'}</section>`;
 
-  const edit = `<details class="card edit"><summary>🧸 Реквизит</summary>
-    <form class="stack" data-submit="trickEdit" data-slug="${s}">
-      <fieldset class="props">${Object.entries(PROPS).map(([k, l]) => `<label class="check"><input type="checkbox" name="props" value="${k}"${m.props.includes(k) ? ' checked' : ''}> ${esc(l)}</label>`).join('')}</fieldset>
-      <button class="btn">Сохранить</button>
-    </form></details>`;
 
   return `<a class="back" href="#/library">← Библиотека</a>
   ${t.error ? `<p class="warn">⚠️ Ошибка в файле: ${esc(t.error)}</p>` : ''}
@@ -66,7 +61,7 @@ export function view(app, [slug]) {
     ${m.commands.length ? `<p class="cmd">Команда: <b>${m.commands.map(esc).join(' / ')}</b></p>` : ''}
     <p class="muted">${TYPE[m.type] || ''} · ${PLACE[m.place] || ''}${m.props.length ? ` · ${m.props.map((p) => esc(PROPS[p] || p)).join(', ')}` : ''}</p>
     ${m.type !== 'trick' ? `<p class="hint-text">${TYPE_HINT[m.type]}</p>` : ''}
-    ${fields}${mainBtn}
+    ${fields}<div class="row">${mainBtn}<button class="btn" data-act="trickOpenEdit" data-slug="${s}">✏️ Редактировать</button></div>
   </section>
   ${suggestionsBlock(sug)}
   ${t.description ? `<section class="card"><h2>Описание</h2><div class="md">${md(t.description)}</div></section>` : ''}
@@ -75,7 +70,6 @@ export function view(app, [slug]) {
   ${links}
   <section class="card"><h2>Заметки</h2><form class="stack" data-submit="trickNotes" data-slug="${s}"><textarea name="notes" rows="3">${esc(t.notes)}</textarea><button class="btn">Сохранить заметку</button></form></section>
   ${history}
-  ${edit}
   <button class="btn ghost danger" data-act="trickDelete" data-slug="${s}">🗑 Удалить из библиотеки</button>`;
 }
 
@@ -104,9 +98,11 @@ export const actions = {
     saved(app, 'Сохранено');
   },
   async trickLearn(app, el) {
-    if (!confirmLearning(app, el.dataset.slug)) return;
-    await setMeta(app, el.dataset.slug, { status: 'learning', step: 1 });
-    saved(app, 'Добавлено в «Учим»');
+    await startLearning(app, el.dataset.slug);
+  },
+  trickOpenEdit(app, el) {
+    app.ui.edit = null;
+    app.go(`#/edit/${encodeURIComponent(el.dataset.slug)}`);
   },
   async trickDelete(app, el) {
     const t = app.model.bySlug.get(el.dataset.slug);
@@ -129,11 +125,6 @@ export const actions = {
     const f = new FormData(form);
     await app.dispatch({ type: 'notes', path: trickPath(form.dataset.slug), notes: String(f.get('notes') || '') });
     saved(app, 'Заметка сохранена');
-  },
-  async trickEdit(app, form) {
-    const f = new FormData(form);
-    await setMeta(app, form.dataset.slug, { props: f.getAll('props').map(String) });
-    saved(app, 'Реквизит сохранён');
   },
   async sugApply(app, el) {
     await setMeta(app, el.dataset.slug, JSON.parse(el.dataset.patch));

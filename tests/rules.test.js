@@ -42,12 +42,6 @@ test('promote to reinforcing after the last step', () => {
   assert.deepEqual(out[0].patch, { status: 'reinforcing', reliability: 'home' });
 });
 
-test('project uses the word "уровень"', () => {
-  const t = mk('p', { type: 'project', status: 'learning', step: 1 }, 4);
-  const out = suggestionsFor(t, days([1, 2, 3], { trick: 'p', block: 'new', step: 1, result: 'good' }));
-  assert.match(out[0].text, /уровень 1/);
-});
-
 test('reinforcing → known: good on 3 days within a week and no bad', () => {
   const t = mk('x', { status: 'reinforcing', reliability: 'home' });
   const now = new Date(2026, 10, 8, 12);

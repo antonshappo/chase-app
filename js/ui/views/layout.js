@@ -23,7 +23,7 @@ export function badge(s) {
 }
 
 export function shell(content, route, status) {
-  const active = { trick: 'library', run: 'train', done: 'train', settings: '' }[route] ?? route;
+  const active = { trick: 'library', edit: 'library', run: 'train', done: 'train', settings: '' }[route] ?? route;
   return `<div class="layout">
   <header class="top"><a class="logo" href="#/train">🐕 Чейз</a>${badge(status)}<a class="icon-btn" href="#/settings" aria-label="Настройки">⚙️</a></header>
   <nav class="tabs">${TABS.map(([r, i, t]) => `<a href="#/${r}" class="${active === r ? 'on' : ''}"><span aria-hidden="true">${i}</span><small>${t}</small></a>`).join('')}</nav>

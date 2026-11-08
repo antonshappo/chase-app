@@ -21,13 +21,12 @@ export function suggestionsFor(t, sessions, now = new Date()) {
   const add = (kind, text, patch) => out.push({
     slug: t.slug, kind, key: `${t.slug}:${kind}:${m.status}:${m.step}:${m.reliability}`, text, patch,
   });
-  const word = m.type === 'project' ? 'уровень' : 'шаг';
 
   if (m.status === 'learning' && m.type !== 'game') {
     const last3 = e.filter((x) => x.block === 'new' && x.step === m.step).slice(-3);
     if (last3.length === 3 && last3.every((x) => x.result === 'good')) {
       if (m.step < t.steps.length) {
-        add('step', `«${m.name}»: ${word} ${m.step} освоен. Перейти к следующему?`, { step: m.step + 1 });
+        add('step', `«${m.name}»: шаг ${m.step} освоен. Перейти к следующему?`, { step: m.step + 1 });
       } else {
         add('promote', `«${m.name}»: всё освоено. Перевести в «Закрепляем»?`, { status: 'reinforcing', reliability: m.reliability || 'home' });
       }

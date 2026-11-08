@@ -5,12 +5,11 @@ export const STATUS = {
   known: '✅ Знает',
 };
 
-export const TYPE = { trick: 'Трюк', game: 'Игра', project: 'Цель по уровням' };
+export const TYPE = { trick: 'Трюк', game: 'Игра' };
 
 export const TYPE_HINT = {
-  trick: 'Конкретное действие, учим по шагам.',
+  trick: 'Учим по шагам: от простого к сложному. Следующий шаг предлагается после трёх тренировок подряд с 👍.',
   game: 'Занятие для головы и носа — ничего не нужно «выучивать», просто играете.',
-  project: 'Большая цель, которая не учится за раз (например, «Ко мне» рядом с собаками). Идём по уровням от простого к сложному; уровень поднимается после трёх тренировок подряд с 👍.',
 };
 
 export const PLACE = { home: '🏠 Дом', outdoor: '🌳 Улица', any: '🏠🌳 Везде' };
@@ -51,5 +50,3 @@ export const BLOCK = {
 
 export const RESULT = { good: '👍', ok: '👌', bad: '👎' };
 export const RESULT_LABEL = { good: 'Получилось', ok: 'Частично', bad: 'Не вышло' };
-
-export const stepWord = (t) => (t.meta.type === 'project' ? 'Уровень' : 'Шаг');

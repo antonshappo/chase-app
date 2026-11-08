@@ -5,6 +5,7 @@ import * as train from './views/train.js';
 import * as run from './views/run.js';
 import * as library from './views/library.js';
 import * as trick from './views/trick.js';
+import * as edit from './views/edit.js';
 import * as add from './views/add.js';
 import * as progress from './views/progress.js';
 import * as settings from './views/settings.js';
@@ -15,6 +16,7 @@ const ROUTES = {
   done: run.doneView,
   library: library.view,
   trick: trick.view,
+  edit: edit.view,
   add: add.view,
   progress: progress.view,
   settings: settings.view,
@@ -25,6 +27,7 @@ const ACTIONS = {
   ...run.actions,
   ...library.actions,
   ...trick.actions,
+  ...edit.actions,
   ...add.actions,
   ...progress.actions,
   ...settings.actions,
@@ -69,7 +72,8 @@ function restoreDrafts(root, drafts) {
   }
 }
 
-function showToast(text) {
+// Всплывающее сообщение внизу. action = { label, fn } добавляет кнопку (например, «Отменить»).
+function showToast(text, { action, icon = '✓' } = {}) {
   let el = document.getElementById('toast');
   if (!el) {
     el = document.createElement('div');
@@ -79,10 +83,17 @@ function showToast(text) {
     el.setAttribute('aria-live', 'polite');
     document.body.appendChild(el);
   }
-  el.textContent = `✓ ${text}`;
+  el.innerHTML = `<span>${esc(`${icon} ${text}`)}</span>${action ? `<button type="button">${esc(action.label)}</button>` : ''}`;
+  el.classList.toggle('has-action', Boolean(action));
+  if (action) {
+    el.querySelector('button').addEventListener('click', () => {
+      el.classList.remove('show');
+      Promise.resolve(action.fn()).catch((e) => console.error(e));
+    }, { once: true });
+  }
   el.classList.add('show');
   clearTimeout(showToast.timer);
-  showToast.timer = setTimeout(() => el.classList.remove('show'), 2600);
+  showToast.timer = setTimeout(() => el.classList.remove('show'), action ? 7000 : 2600);
 }
 
 export function parseRoute() {

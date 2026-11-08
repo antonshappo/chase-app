@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  parseTrick, withMeta, withLink, withNotes, newTrickText, slugify, uniqueSlug, linkTitle, splitFrontmatter, trickPath,
+  parseTrick, withMeta, withLink, withNotes, newTrickText, slugify, uniqueSlug, linkTitle, splitFrontmatter, trickPath, buildTrickText,
 } from '../js/core/trick.js';
 
 const SAMPLE = `---
@@ -129,4 +129,36 @@ test('linkTitle guesses source', () => {
   assert.equal(linkTitle('https://m.facebook.com/x'), 'Facebook');
   assert.equal(linkTitle('https://dogtrick.ru/a'), 'dogtrick.ru');
   assert.equal(linkTitle('не ссылка'), 'не ссылка');
+});
+
+test('legacy and unknown types are read as trick', () => {
+  assert.equal(parseTrick('x', '---\nname: X\ntype: project\n---\n').meta.type, 'trick');
+  assert.equal(parseTrick('x', '---\nname: X\ntype: game\n---\n').meta.type, 'game');
+});
+
+test('buildTrickText writes every section and round-trips', () => {
+  const content = {
+    description: 'Описание **важное**',
+    steps: [{ title: 'Первый', body: 'Делай раз' }, { title: '', body: 'Без названия' }],
+    extra: [{ title: 'Частые ошибки', md: '- спешка' }],
+    links: [{ title: 'YouTube', url: 'https://youtu.be/1', note: 'видно ладонь' }, { title: '', url: 'https://a.ru/x', note: '' }],
+    notes: 'Любит сыр',
+  };
+  const t = parseTrick('x', buildTrickText({ name: 'X', status: 'learning', step: 2 }, content));
+  assert.equal(t.error, null);
+  assert.equal(t.meta.status, 'learning');
+  assert.equal(t.meta.step, 2);
+  assert.equal(t.description, 'Описание **важное**');
+  assert.deepEqual(t.steps, [{ title: 'Первый', body: 'Делай раз' }, { title: 'Шаг 2', body: 'Без названия' }]);
+  assert.deepEqual(t.extra, [{ title: 'Частые ошибки', md: '- спешка' }]);
+  assert.deepEqual(t.links, [{ title: 'YouTube', url: 'https://youtu.be/1', note: 'видно ладонь' }, { title: 'a.ru', url: 'https://a.ru/x', note: '' }]);
+  assert.equal(t.notes, 'Любит сыр');
+});
+
+test('buildTrickText neutralizes headings typed inside texts', () => {
+  const t = parseTrick('x', buildTrickText({ name: 'X' }, { steps: [{ title: 'A', body: '### не шаг\n## не раздел' }], notes: '## тоже' }));
+  assert.equal(t.steps.length, 1);
+  assert.match(t.steps[0].body, /не шаг/);
+  assert.equal(t.extra.length, 0);
+  assert.match(t.notes, /тоже/);
 });

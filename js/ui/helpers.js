@@ -53,9 +53,29 @@ export function confirmLearning(app, slug, { name, place } = {}) {
 }
 
 // Короткое подтверждение внизу экрана. Если сети нет — честно говорим, что отправится позже.
-export function saved(app, msg) {
+export function saved(app, msg, action) {
   const offline = app.status?.state === 'offline' || globalThis.navigator?.onLine === false;
-  app.toast?.(offline ? `${msg} · отправится, когда появится сеть` : msg);
+  app.toast?.(offline ? `${msg} · отправится, когда появится сеть` : msg, { action });
+}
+
+export const info = (app, msg) => app.toast?.(msg, { icon: 'ℹ️' });
+
+// Перевести в «Учим» с кнопкой «Отменить» во всплывающем сообщении.
+export async function startLearning(app, slug, after = () => {}) {
+  const t = app.model.bySlug.get(slug);
+  if (!t || !confirmLearning(app, slug)) return false;
+  const prev = { status: t.meta.status, step: t.meta.step };
+  await setMeta(app, slug, { status: 'learning', step: 1 });
+  after();
+  saved(app, `«${t.meta.name}» — в «Учим»`, {
+    label: 'Отменить',
+    fn: async () => {
+      await setMeta(app, slug, prev);
+      after();
+      info(app, 'Отменено');
+    },
+  });
+  return true;
 }
 
 export function visibleSuggestions(list) {

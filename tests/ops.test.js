@@ -63,3 +63,19 @@ test('delete op removes the file from the view', () => {
   ]);
   assert.equal(view.has(P), false);
 });
+
+test('edit op keeps status/step from the file and replaces content', () => {
+  const cur = applyOp(A, { type: 'meta', path: P, patch: { status: 'learning', step: 2 } });
+  const out = applyOp(cur, {
+    type: 'edit', path: P, meta: { name: 'Новое имя', type: 'game' },
+    content: { description: 'd', steps: [{ title: 's', body: 'b' }], extra: [], links: [], notes: 'n' },
+  });
+  const t = parseTrick('a', out);
+  assert.equal(t.meta.name, 'Новое имя');
+  assert.equal(t.meta.type, 'game');
+  assert.equal(t.meta.status, 'learning');
+  assert.equal(t.meta.step, 2);
+  assert.equal(t.steps.length, 1);
+  assert.equal(t.notes, 'n');
+  assert.throws(() => applyOp(null, { type: 'edit', path: P, meta: {}, content: {} }));
+});

@@ -61,7 +61,7 @@ test('10-min session has no game and 2 repeats', () => {
 });
 
 test('repeat prefers least recently practiced', () => {
-  const tricks = ['p1', 'p2', 'p3'].map((s) => mk(s, { type: 'project' }));
+  const tricks = ['p1', 'p2', 'p3'].map((s) => mk(s, { status: 'reinforcing' }));
   const sessions = [
     sess('2026-11-01T10:00:00', [{ trick: 'p1', block: 'repeat', result: 'good' }]),
     sess('2026-11-03T10:00:00', [{ trick: 'p2', block: 'repeat', result: 'good' }]),

@@ -1,4 +1,4 @@
-import { STATUS, TYPE, PLACE, PROPS, stepWord } from '../../core/labels.js';
+import { STATUS, TYPE, PLACE, PROPS } from '../../core/labels.js';
 import { esc } from '../../core/md.js';
 import { options, statusBadge } from '../helpers.js';
 
@@ -33,7 +33,7 @@ export function view(app) {
   const sel = (key, map, label) => `<select class="${f[key] ? 'active' : ''}" data-change="libFilter" data-k="${key}" aria-label="${label}"><option value="">${label}: все</option>${options(map, f[key])}</select>`;
   const row = (t) => {
     const step = t.meta.status === 'learning' && t.meta.type !== 'game'
-      ? ` · ${stepWord(t)} ${t.meta.step}${t.steps.length ? `/${t.steps.length}` : ''}` : '';
+      ? ` · Шаг ${t.meta.step}${t.steps.length ? `/${t.steps.length}` : ''}` : '';
     return `<li><a href="#/trick/${encodeURIComponent(t.slug)}">
       <span class="lib-name">${esc(t.meta.name)}${t.error ? ' ⚠️' : ''}${t.meta.needs_method ? ' <span class="muted small">· нужна методика</span>' : ''}</span>
       <span class="lib-meta">${t.meta.type === 'game' ? '' : `${statusBadge(t.meta.status)} `}<span class="muted small">${TYPE[t.meta.type] || ''} · ${PLACE[t.meta.place] || ''}${step}</span></span>
