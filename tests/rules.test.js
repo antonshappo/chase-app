@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { suggestionsFor, allSuggestions, nextLevel } from '../js/core/rules.js';
+import { suggestionsFor, allSuggestions, nextLevel, learningConflicts } from '../js/core/rules.js';
 import { mk, sess } from './helpers.js';
 
 const days = (list, item, place) => list.map((d) => sess(`2026-11-0${d}T10:00:00`, [item], place));
@@ -86,4 +86,16 @@ test('allSuggestions gives each suggestion a stable key', () => {
   const t = mk('x', { status: 'known', reliability: 'yard' });
   const out = allSuggestions([t], days([1, 2], { trick: 'x', block: 'repeat', result: 'bad' }));
   assert.equal(out[0].key, 'x:demote:known:1:yard');
+});
+
+test('learning limit counts only tricks that share a place', () => {
+  const tricks = [
+    mk('out1', { status: 'learning', place: 'outdoor' }),
+    mk('out2', { status: 'learning', place: 'outdoor' }),
+    mk('anyl', { status: 'learning', place: 'any' }),
+    mk('home1', { status: 'want', place: 'home' }),
+  ];
+  assert.deepEqual(learningConflicts(tricks, 'home1', 'home').map((t) => t.slug), ['anyl']);
+  assert.deepEqual(learningConflicts(tricks, 'x', 'outdoor').map((t) => t.slug), ['out1', 'out2', 'anyl']);
+  assert.deepEqual(learningConflicts(tricks, 'out1', 'any').map((t) => t.slug), ['out2', 'anyl']);
 });

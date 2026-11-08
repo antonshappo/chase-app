@@ -7,9 +7,9 @@ import { startRun } from './run.js';
 
 const setup = () => lsGet('chase.setup', { place: 'home', minutes: 20 });
 
-function cardLine(app, c) {
+function cardLine(app, c, plan) {
   if (c.block === 'pick') {
-    return `Сейчас ничего не учим — выбери: ${c.options.slice(0, 6).map((s) => `<button class="chip" data-act="trainPick" data-slug="${esc(s)}">${esc(trickName(app, s))}</button>`).join(' ')}`;
+    return `${plan.place === 'outdoor' ? 'На улице' : 'Дома'} сейчас ничего не учим — выбери: ${c.options.slice(0, 6).map((s) => `<button class="chip" data-act="trainPick" data-slug="${esc(s)}">${esc(trickName(app, s))}</button>`).join(' ')}`;
   }
   return c.slugs.map((s) => esc(trickName(app, s))).join(' → ');
 }
@@ -17,7 +17,7 @@ function cardLine(app, c) {
 function planView(app, plan) {
   return `<section class="card plan">
     <h2>План: ${PLACE[plan.place]}${plan.minutes ? ` · ${plan.minutes} мин` : ''}</h2>
-    <ol class="plan-list">${plan.cards.map((c, i) => `<li><div><b>${BLOCK[c.block].title}</b><span>${cardLine(app, c)}</span></div>${c.block === 'pick' ? '' : `<button class="icon-btn" data-act="trainSwap" data-i="${i}" aria-label="Заменить">🔄</button>`}</li>`).join('')}</ol>
+    <ol class="plan-list">${plan.cards.map((c, i) => `<li><div><b>${BLOCK[c.block].title}</b><span>${cardLine(app, c, plan)}</span></div>${c.block === 'pick' ? '' : `<button class="icon-btn" data-act="trainSwap" data-i="${i}" aria-label="Заменить">🔄</button>`}</li>`).join('')}</ol>
     <button class="btn primary big" data-act="trainStart">Начать ▶</button>
   </section>`;
 }

@@ -68,3 +68,12 @@ test('checkAccess: 404 means no access', async () => {
   await assert.rejects(gh(fakeFetch(() => ({ status: 404 }))).checkAccess(), AuthError);
   assert.equal(await gh(fakeFetch(() => ({ body: {} }))).checkAccess(), true);
 });
+
+test('deleteFile sends DELETE with sha; 404 counts as already deleted', async () => {
+  const f = fakeFetch(() => ({ body: {} }));
+  await gh(f).deleteFile('tricks/a/trick.md', 's1', 'msg');
+  assert.equal(f.calls[0].method, 'DELETE');
+  assert.deepEqual(JSON.parse(f.calls[0].body), { message: 'msg', sha: 's1', branch: 'main' });
+  await gh(fakeFetch(() => ({ status: 404 }))).deleteFile('x', 's', 'm');
+  await assert.rejects(gh(fakeFetch(() => ({ status: 409 }))).deleteFile('x', 's', 'm'), ConflictError);
+});

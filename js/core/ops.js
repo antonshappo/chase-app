@@ -21,6 +21,8 @@ export function applyOp(text, op) {
       list.sort((a, b) => a.id.localeCompare(b.id));
       return `${JSON.stringify(list, null, 2)}\n`;
     }
+    case 'delete':
+      return null;
     case 'settings': {
       const cur = text ? JSON.parse(text) : {};
       return `${JSON.stringify({ ...cur, ...op.patch }, null, 2)}\n`;
@@ -34,7 +36,9 @@ export function applyQueue(files, queue) {
   const out = new Map([...files].map(([p, f]) => [p, f.text]));
   for (const { op } of queue) {
     try {
-      out.set(op.path, applyOp(out.get(op.path) ?? null, op));
+      const next = applyOp(out.get(op.path) ?? null, op);
+      if (next === null) out.delete(op.path);
+      else out.set(op.path, next);
     } catch {
       /* операция, которую нельзя применить, не ломает остальные */
     }

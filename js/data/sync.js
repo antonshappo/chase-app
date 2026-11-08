@@ -10,6 +10,7 @@ function commitMessage(op) {
     case 'link': return `Ссылка: ${op.path}`;
     case 'notes': return `Заметки: ${op.path}`;
     case 'settings': return 'Настройки';
+    case 'delete': return `Удалено: ${op.path}`;
     default: return `Изменение: ${op.path}`;
   }
 }
@@ -83,8 +84,13 @@ export class Sync {
       return;
     }
     try {
-      const sha = await this.gh.putFile(op.path, text, remote?.sha, commitMessage(op));
-      await this.store.setFile(op.path, sha, text);
+      if (text === null) {
+        if (remote) await this.gh.deleteFile(op.path, remote.sha, commitMessage(op));
+        await this.store.deleteFile(op.path);
+      } else {
+        const sha = await this.gh.putFile(op.path, text, remote?.sha, commitMessage(op));
+        await this.store.setFile(op.path, sha, text);
+      }
     } catch (e) {
       if (e instanceof ConflictError && attempt < 3) return this.pushOne(op, attempt + 1);
       throw e;

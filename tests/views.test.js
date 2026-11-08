@@ -68,3 +68,22 @@ test('train view shows a built plan', () => {
   a.ui.plan = a.ui.plan || { place: 'home', minutes: 20, cards: [{ block: 'pick', slugs: [], options: ['obnimi'] }] };
   assert.match(train.view(a), /План:/);
 });
+
+test('library filter: several props match any of them, treats are implicit', () => {
+  const m = buildModel(new Map([
+    ['tricks/a/trick.md', newTrickText({ name: 'A', props: ['tug'] })],
+    ['tricks/b/trick.md', newTrickText({ name: 'B', props: ['ball'] })],
+    ['tricks/c/trick.md', newTrickText({ name: 'C' })],
+  ]));
+  const names = (f) => library.filterTricks(m.tricks, { q: '', place: '', status: '', type: '', props: [], ...f }).map((t) => t.meta.name);
+  assert.deepEqual(names({ props: ['tug', 'ball'] }), ['A', 'B']);
+  assert.deepEqual(names({ props: ['tug'] }), ['A']);
+  assert.deepEqual(names({}), ['A', 'B', 'C']);
+});
+
+test('library shows a reset button only when filters are active', () => {
+  const a = app();
+  assert.ok(!library.view(a).includes('libReset'));
+  a.ui.lib = { q: '', place: '', status: '', type: 'project', props: [] };
+  assert.ok(library.view(a).includes('libReset'));
+});

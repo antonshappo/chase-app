@@ -1,7 +1,7 @@
-import { PLACE, PROPS, STATUS, TYPE } from '../../core/labels.js';
+import { PLACE, PROPS, STATUS, TYPE, TYPE_HINT } from '../../core/labels.js';
 import { esc } from '../../core/md.js';
 import { newTrickText, trickPath, uniqueSlug, linkTitle } from '../../core/trick.js';
-import { options, ssGet, ssSet, confirmLearning, today } from '../helpers.js';
+import { options, ssGet, ssSet, confirmLearning, today, saved } from '../helpers.js';
 
 export function view(app) {
   const mode = app.ui.addMode || 'link';
@@ -22,6 +22,7 @@ export function view(app) {
     <label>Название<input name="name" required></label>
     <label>Команда (через запятую)<input name="commands" placeholder="Обними"></label>
     <label>Тип<select name="type">${options(TYPE, 'trick')}</select></label>
+    <ul class="hint-text type-hints">${Object.entries(TYPE).map(([k, l]) => `<li><b>${l}</b> — ${TYPE_HINT[k]}</li>`).join('')}</ul>
     <label>Где<select name="place">${options(PLACE, 'any')}</select></label>
     <label>Статус<select name="status">${options(STATUS, 'want')}</select></label>
     <fieldset class="props"><legend class="muted small">Реквизит</legend>${Object.entries(PROPS).map(([k, l]) => `<label class="check"><input type="checkbox" name="props" value="${k}"> ${esc(l)}</label>`).join('')}</fieldset>
@@ -60,6 +61,7 @@ export const actions = {
     await app.dispatch({ type: 'link', path: trickPath(slug), link: { url, title: linkTitle(url), note: String(f.get('note') || '') } });
     ssSet('chase.share', null);
     app.ui.addMsg = `Сохранено в «${label || app.model.bySlug.get(slug)?.meta.name || slug}»`;
+    saved(app, 'Ссылка сохранена');
     app.render(true);
   },
   async addTrick(app, form) {
@@ -79,8 +81,9 @@ export const actions = {
     if (status === 'known' || status === 'reinforcing') meta.reliability = 'home';
     if (status === 'known') meta.known_since = today();
     const c = createTrick(app, meta);
-    if (status === 'learning' && !confirmLearning(app, c.slug, name)) return;
+    if (status === 'learning' && !confirmLearning(app, c.slug, { name, place: meta.place })) return;
     await app.dispatch(c.op);
+    saved(app, `«${name}» добавлен в библиотеку`);
     app.go(`#/trick/${encodeURIComponent(c.slug)}`);
   },
 };

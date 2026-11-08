@@ -2,6 +2,7 @@ import { esc } from '../core/md.js';
 import { STATUS } from '../core/labels.js';
 import { trickPath } from '../core/trick.js';
 import { dayKey, localIso } from '../core/log.js';
+import { learningConflicts } from '../core/rules.js';
 
 function storageGet(kind, key, fallback) {
   try {
@@ -40,13 +41,21 @@ export const statusBadge = (s) => `<span class="badge st-${esc(s)}">${STATUS[s] 
 
 export const setMeta = (app, slug, patch) => app.dispatch({ type: 'meta', path: trickPath(slug), patch });
 
-export function confirmLearning(app, slug, label) {
-  const others = app.model.tricks.filter((x) => x.meta.status === 'learning' && x.slug !== slug);
+export function confirmLearning(app, slug, { name, place } = {}) {
+  const t = app.model.bySlug.get(slug);
+  const where = place || t?.meta.place || 'any';
+  const others = learningConflicts(app.model.tricks, slug, where);
   const limit = app.model.settings.learningLimit || 2;
   if (others.length < limit) return true;
-  const name = label || trickName(app, slug);
   const list = others.map((x) => `«${x.meta.name}»`).join(', ');
-  return globalThis.confirm(`Сейчас уже учите ${others.length}: ${list}. Лучше не больше ${limit} одновременно. Всё равно добавить «${name}»?`);
+  const scope = where === 'home' ? ' для дома' : where === 'outdoor' ? ' для улицы' : '';
+  return globalThis.confirm(`${scope ? `Сейчас${scope}` : 'Сейчас'} уже учите ${others.length}: ${list}. Лучше не больше ${limit} одновременно. Всё равно добавить «${name || trickName(app, slug)}»?`);
+}
+
+// Короткое подтверждение внизу экрана. Если сети нет — честно говорим, что отправится позже.
+export function saved(app, msg) {
+  const offline = app.status?.state === 'offline' || globalThis.navigator?.onLine === false;
+  app.toast?.(offline ? `${msg} · отправится, когда появится сеть` : msg);
 }
 
 export function visibleSuggestions(list) {

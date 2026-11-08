@@ -61,7 +61,7 @@ export function buildSession({ tricks, sessions = [], place, minutes = 20, props
   if (learning.length) {
     cards.push(newCard(learning[0]));
   } else {
-    const options = tricks.filter((t) => t.meta.status === 'want' && t.meta.type !== 'game').map((t) => t.slug);
+    const options = pool.filter((t) => t.meta.status === 'want' && t.meta.type !== 'game').map((t) => t.slug);
     if (options.length) cards.push({ block: 'pick', slugs: [], options });
   }
 

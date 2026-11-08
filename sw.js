@@ -1,5 +1,5 @@
 // При любом изменении файлов приложения увеличивай VERSION — так телефоны получат обновление.
-const VERSION = 'chase-v1';
+const VERSION = 'chase-v2';
 const SHELL = [
   './',
   './index.html',

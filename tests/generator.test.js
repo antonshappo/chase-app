@@ -113,3 +113,17 @@ test('singleSession builds one card by status', () => {
   assert.deepEqual(singleSession(mk('g', { type: 'game', place: 'outdoor' })), { place: 'outdoor', minutes: null, cards: [{ block: 'game', slugs: ['g'] }] });
   assert.deepEqual(singleSession(mk('k')).cards, [{ block: 'repeat', slugs: ['k'] }]);
 });
+
+test('pick options are limited to the session place', () => {
+  const tricks = [...base().filter((t) => t.slug !== 'learn'), mk('wish-out', { status: 'want', place: 'outdoor' })];
+  const p = buildSession({ tricks, sessions: [], place: 'home', minutes: 20, props: [], rng: seeded() });
+  assert.deepEqual(p.cards.find((c) => c.block === 'pick').options, ['wish']);
+});
+
+test('learning only outdoor → home session offers a pick', () => {
+  const tricks = [...base().filter((t) => t.slug !== 'learn'), mk('learn-out', { status: 'learning', place: 'outdoor' }, 3)];
+  const home = buildSession({ tricks, sessions: [], place: 'home', minutes: 20, props: [], rng: seeded() });
+  assert.equal(home.cards[1].block, 'pick');
+  const out = buildSession({ tricks, sessions: [], place: 'outdoor', minutes: 20, props: [], rng: seeded() });
+  assert.deepEqual(out.cards[1].slugs, ['learn-out']);
+});

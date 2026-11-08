@@ -53,3 +53,13 @@ test('applyQueue applies ops in order and skips broken ones', () => {
   assert.equal(t.meta.step, 3);
   assert.equal(view.has('tricks/missing/trick.md'), false);
 });
+
+test('delete op removes the file from the view', () => {
+  assert.equal(applyOp(A, { type: 'delete', path: P }), null);
+  const view = applyQueue(new Map([[P, { sha: '1', text: A }]]), [
+    { id: 1, op: { type: 'meta', path: P, patch: { step: 2 } } },
+    { id: 2, op: { type: 'delete', path: P } },
+    { id: 3, op: { type: 'meta', path: P, patch: { step: 3 } } },
+  ]);
+  assert.equal(view.has(P), false);
+});

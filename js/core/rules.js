@@ -7,6 +7,13 @@ export function nextLevel(rel) {
   return i >= 0 && i < RELIABILITY.length - 1 ? RELIABILITY[i + 1] : null;
 }
 
+export const placesOverlap = (a, b) => a === 'any' || b === 'any' || a === b;
+
+// Лимит «Учим» считается отдельно для дома и для улицы: мешают только те, что делаются там же.
+export function learningConflicts(tricks, slug, place) {
+  return tricks.filter((t) => t.meta.status === 'learning' && t.slug !== slug && placesOverlap(t.meta.place, place));
+}
+
 export function suggestionsFor(t, sessions, now = new Date()) {
   const m = t.meta;
   const e = entriesFor(t.slug, sessions).filter((x) => x.result);

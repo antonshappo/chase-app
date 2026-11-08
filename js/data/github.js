@@ -78,6 +78,13 @@ export class GitHub {
     return { sha: j.sha, text: b64decode(j.content) };
   }
 
+  async deleteFile(path, sha, message) {
+    const r = await this.req('DELETE', `/contents/${encodePath(path)}`, { message, sha, branch: this.branch });
+    if (r.status === 404) return;
+    if (r.status === 409 || r.status === 422) throw new ConflictError(`Файл ${path} изменился на сервере`);
+    if (!r.ok) throw new Error(`Не удалось удалить ${path} (GitHub ${r.status})`);
+  }
+
   async putFile(path, text, sha, message) {
     const r = await this.req('PUT', `/contents/${encodePath(path)}`, {
       message, content: b64encode(text), branch: this.branch, ...(sha ? { sha } : {}),

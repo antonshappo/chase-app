@@ -23,6 +23,11 @@ class FakeGitHub {
     throw new Error('no blob');
   }
   async getFile(path) { this.check(); const f = this.files.get(path); return f ? { ...f } : null; }
+  async deleteFile(path, sha) {
+    this.check();
+    if (this.files.get(path)?.sha !== sha) throw new ConflictError('sha mismatch');
+    this.files.delete(path);
+  }
   async putFile(path, text, sha) {
     this.check();
     if (this.beforePut) { const fn = this.beforePut; this.beforePut = null; fn(this); }
@@ -122,4 +127,14 @@ test('onChange is called with status updates', async () => {
   sync.onChange = (s) => seen.push(s.state);
   await sync.sync();
   assert.deepEqual(seen, ['syncing', 'ok']);
+});
+
+test('delete op removes the file on the server and locally', async () => {
+  const { gh, store, sync } = setup({ [P]: A });
+  await sync.sync();
+  await sync.enqueue({ type: 'delete', path: P });
+  await sync.sync();
+  assert.equal(gh.files.has(P), false);
+  assert.equal((await store.getFiles()).has(P), false);
+  assert.equal(sync.status.state, 'ok');
 });

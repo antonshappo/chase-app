@@ -35,7 +35,7 @@ function hintBlock(t) {
 
 const cmd = (t) => (t.meta.commands.length ? `<p class="cmd">Команда: <b>${t.meta.commands.map(esc).join(' / ')}</b></p>` : '');
 
-function cardBody(app, card) {
+function cardBody(app, card, plan) {
   const T = (s) => app.model.bySlug.get(s);
   switch (card.block) {
     case 'warmup':
@@ -75,7 +75,7 @@ function cardBody(app, card) {
       return `<h2>🏁 ${esc(t.meta.name)}</h2>${cmd(t)}<p>Закончи на успехе: команда, которую Чейз точно выполнит, и большая награда.</p>`;
     }
     case 'pick':
-      return '<h2>Новое</h2><p>Сейчас ничего не учим. После тренировки выбери новый трюк в «Библиотеке».</p>';
+      return `<h2>Новое</h2><p>${plan.place === 'outdoor' ? 'На улице' : 'Дома'} сейчас ничего не учим. После тренировки выбери новый трюк в «Библиотеке» или прямо на экране «Тренировка».</p>`;
     default:
       return '';
   }
@@ -92,7 +92,7 @@ export function view(app) {
   return `<section class="card run">
     <div class="run-top"><span class="muted">${index + 1} / ${total} · ${BLOCK[card.block].title.toUpperCase()}</span><button class="icon-btn" data-act="runQuit" aria-label="Завершить">✕</button></div>
     <div class="progress"><span style="width:${((index + 1) / total) * 100}%"></span></div>
-    ${cardBody(app, card)}
+    ${cardBody(app, card, plan)}
     ${rate}
     <div class="run-nav">
       <button class="btn ghost" data-act="runPrev"${index === 0 ? ' disabled' : ''}>◀ Назад</button>
